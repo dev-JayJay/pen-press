@@ -1,0 +1,164 @@
+<?php
+require_once "../includes/db.php";
+include "../includes/header.php";
+
+// Ensure user is logged in and is a reader
+if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'reader'){
+    header("Location: login.php");
+    exit;
+}
+
+// Fetch all published news
+$stmt = $conn->prepare("SELECT n.*, u.first_name, u.last_name 
+                        FROM news n 
+                        JOIN users u ON n.author_id=u.id 
+                        WHERE n.status='approved' 
+                        ORDER BY n.created_at DESC");
+$stmt->execute();
+$news_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
+
+<style>
+    body {
+        background-color: #f5f6fa;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    /* Sidebar */
+    .sidebar {
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 240px;
+        background-color: #1E1E2F;
+        padding-top: 60px;
+        color: #fff;
+        border-right: 1px solid #2c2c3e;
+    }
+    .sidebar h4 {
+        color: #00BFFF;
+        font-weight: 600;
+        padding-left: 20px;
+    }
+    .sidebar .nav-link {
+        color: #c0c0c0;
+        padding: 10px 20px;
+        transition: all 0.2s;
+    }
+    .sidebar .nav-link:hover {
+        background-color: #2c2c3e;
+        color: #00BFFF;
+        border-radius: 5px;
+    }
+    .sidebar .nav-link.active {
+        background-color: #00BFFF;
+        color: #fff;
+        border-radius: 5px;
+    }
+
+    main {
+        margin-left: 240px;
+        padding: 30px;
+    }
+
+    /* Cards */
+    .card {
+        border-radius: 10px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    .card-title {
+        font-weight: 600;
+        color: #1E1E2F;
+    }
+    .card-text {
+        color: #555;
+    }
+    .btn-primary {
+        background-color: #00BFFF;
+        border-color: #00BFFF;
+    }
+    .btn-primary:hover {
+        background-color: #009acd;
+        border-color: #009acd;
+    }
+    .btn-outline-primary {
+        border-color: #00BFFF;
+        color: #00BFFF;
+    }
+    .btn-outline-primary:hover {
+        background-color: #00BFFF;
+        color: #fff;
+    }
+
+    @media(max-width: 768px) {
+        .sidebar {
+            position: relative;
+            width: 100%;
+            height: auto;
+        }
+        main {
+            margin-left: 0;
+            padding: 20px;
+        }
+    }
+</style>
+
+<div class="sidebar d-flex flex-column">
+    <h4 class="mb-4 mt-2">Pen Press News</h4>
+    <ul class="nav flex-column">
+        <li class="nav-item mb-2">
+            <a class="nav-link active" href="dashboard.php">Dashboard</a>
+        </li>
+        <li class="nav-item mb-2">
+            <a class="nav-link" href="category.php?cat=sport">Sports</a>
+        </li>
+        <li class="nav-item mb-2">
+            <a class="nav-link" href="category.php?cat=business">Business</a>
+        </li>
+        <li class="nav-item mb-2">
+            <a class="nav-link" href="category.php?cat=features">Features</a>
+        </li>
+        <li class="nav-item mt-4">
+            <a class="nav-link text-danger" href="logout.php">Logout</a>
+        </li>
+    </ul>
+</div>
+
+<main>
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-4">
+        <h2>Welcome, <?php echo $_SESSION['first_name']; ?></h2>
+    </div>
+
+    <div class="row">
+        <?php foreach($news_list as $news): ?>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <?php if($news['image_path']): ?>
+                        <img src="<?php echo "../" . $news['image_path']; ?>"  class="card-img-top" style="height:220px; object-fit:cover; border-top-left-radius:10px; border-top-right-radius:10px;">
+                    <?php endif; ?>
+                    <div class="card-body">
+                        <h5 class="card-title"><?php echo $news['title']; ?></h5>
+                        <p class="card-text"><?php echo substr($news['summary'],0,120).'...'; ?></p>
+                        <p class="text-muted mb-2" style="font-size:0.85rem;">By <?php echo $news['first_name'].' '.$news['last_name']; ?></p>
+                        <a href="news_detail.php?id=<?php echo $news['id']; ?>" class="btn btn-primary btn-sm">Read More</a>
+
+                        <?php
+                        $stmt2 = $conn->prepare("SELECT COUNT(*) as like_count FROM reactions WHERE news_id=?");
+                        $stmt2->execute([$news['id']]);
+                        $like_count = $stmt2->fetch(PDO::FETCH_ASSOC)['like_count'];
+                        ?>
+                        <a href="like.php?news_id=<?php echo $news['id']; ?>" class="btn btn-outline-primary btn-sm mt-2">
+                            👍 Like (<?php echo $like_count; ?>)
+                        </a>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</main>
+
+<?php include "../includes/footer.php"; ?>
