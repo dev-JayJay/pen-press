@@ -30,22 +30,41 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
         move_uploaded_file($_FILES['passport']['tmp_name'], '../' . $passport_path);
     }
 
-    if($first_name && $last_name && $email && $password && $editor_type){
-        // Check if email already exists
-        $stmt = $conn->prepare("SELECT id FROM users WHERE email=?");
-        $stmt->execute([$email]);
-        if($stmt->rowCount() > 0){
-            $error = "Email already exists!";
-        } else {
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $conn->prepare("INSERT INTO users (first_name,last_name,email,password,role,editor_type,admission_no,faculty,department,level,passport_path) 
-                                    VALUES (?, ?, ?, ?, 'editor', ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$first_name,$last_name,$email,$hashed_password,$editor_type,$admission_no,$faculty,$department,$level,$passport_path]);
-            $success = "Editor account created successfully!";
-        }
-    } else {
-        $error = "Please fill all required fields!";
-    }
+
+$role = $_POST['role'] ?? '';
+$editor_type_value = ($role === 'editor') ? ($_POST['editor_type'] ?? null) : null;
+
+if(!$first_name || !$last_name || !$email || !$password || !$role){
+    $error = "Please fill all required fields!";
+}
+
+if($role === 'editor' && !$editor_type_value){
+    $error = "Please select an editor type.";
+}
+
+// Only insert if no error
+if(!$error){
+    $stmt = $conn->prepare("INSERT INTO users 
+        (first_name,last_name,email,password,role,editor_type,admission_no,faculty,department,level,passport_path) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    
+    $stmt->execute([
+        $first_name,
+        $last_name,
+        $email,
+        password_hash($password, PASSWORD_DEFAULT),
+        $role,
+        $editor_type_value, 
+        $admission_no,
+        $faculty,
+        $department,
+        $level,
+        $passport_path
+    ]);
+
+    $success = ucfirst($role) . " account created successfully!";
+}
+
 }
 
 include "../includes/header.php";
@@ -150,10 +169,13 @@ include "../includes/header.php";
             <a class="nav-link" href="assign_task.php">Assign Task</a>
         </li>
         <li class="nav-item mb-2">
-            <a class="nav-link" href="create_editor.php">Create Editor</a>
+            <a class="nav-link" href="messages.php">Messages</a>
         </li>
         <li class="nav-item mb-2">
-            <a class="nav-link" href="messages.php">Messages</a>
+            <a class="nav-link" href="all_news.php">All News</a>
+        </li>
+        <li class="nav-item mb-2">
+            <a class="nav-link" href="create_editor.php">Create Editor / Reporter</a>
         </li>
         <li class="nav-item mt-4">
             <a class="nav-link text-danger" href="logout.php">Logout</a>
@@ -161,26 +183,6 @@ include "../includes/header.php";
     </ul>
 </div>
 
-<div class="sidebar d-flex flex-column">
-    <h4 class="mb-4 mt-2">Pen Press News - EIC</h4>
-    <ul class="nav flex-column">
-        <li class="nav-item mb-2">
-            <a class="nav-link" href="dashboard.php">Dashboard</a>
-        </li>
-        <li class="nav-item mb-2">
-            <a class="nav-link" href="assign_task.php">Assign Task</a>
-        </li>
-        <li class="nav-item mb-2">
-            <a class="nav-link active" href="create_editor.php">Create Editor</a>
-        </li>
-        <li class="nav-item mb-2">
-            <a class="nav-link" href="messages.php">Messages</a>
-        </li>
-        <li class="nav-item mt-4">
-            <a class="nav-link text-danger" href="logout.php">Logout</a>
-        </li>
-    </ul>
-</div>
 
 <main>
     <h2>Create New Editor</h2>
@@ -214,8 +216,16 @@ include "../includes/header.php";
                 <input type="password" class="form-control" name="password" required>
             </div>
             <div class="mb-3">
+                <label class="form-label">Role</label>
+                <select class="form-select" name="role" required>
+                    <option value="">-- Select Role --</option>
+                    <option value="editor" <?php if(isset($_POST['role']) && $_POST['role']=='editor') echo 'selected'; ?>>Editor</option>
+                    <option value="reporter" <?php if(isset($_POST['role']) && $_POST['role']=='reporter') echo 'selected'; ?>>Reporter</option>
+                </select>
+            </div>
+            <div class="mb-3">
                 <label class="form-label">Editor Type</label>
-                <select class="form-select" name="editor_type" required>
+                <select class="form-select" name="editor_type">
                     <option value="">-- Select Type --</option>
                     <option value="sport">Sport</option>
                     <option value="business">Business</option>
@@ -254,5 +264,23 @@ include "../includes/header.php";
         </form>
     </div>
 </main>
+
+<script>
+const roleSelect = document.querySelector('select[name="role"]');
+const editorTypeDiv = document.querySelector('select[name="editor_type"]').parentElement;
+
+roleSelect.addEventListener('change', () => {
+    if(roleSelect.value === 'editor'){
+        editorTypeDiv.style.display = 'block';
+    } else {
+        editorTypeDiv.style.display = 'none';
+    }
+});
+
+// Initial check
+if(roleSelect.value !== 'editor'){
+    editorTypeDiv.style.display = 'none';
+}
+</script>
 
 <?php include "../includes/footer.php"; ?>

@@ -7,15 +7,33 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
 
-    $stmt = $conn->prepare("SELECT * FROM users WHERE email=? AND role='reader'");
+    // Fetch user regardless of role
+    $stmt = $conn->prepare("SELECT * FROM users WHERE email=? LIMIT 1");
     $stmt->execute([$email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if($user && password_verify($password, $user['password'])) {
+        // Set session variables
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['role'] = $user['role'];
         $_SESSION['first_name'] = $user['first_name'];
-        header("Location: dashboard.php");
+
+        // Redirect based on role
+        switch($user['role']){
+            case 'editor_in_chief':
+                header("Location: /pen-press/editor_in_chief/dashboard.php");
+                break;
+            case 'editor':
+                header("Location: /pen-press/editors/dashboard.php");
+                break;
+            case 'reporter':
+                header("Location: /pen-press/reporter/dashboard.php");
+                break;
+            case 'reader':
+            default:
+                header("Location: dashboard.php");
+                break;
+        }
         exit;
     } else {
         $message = "Invalid login credentials.";
@@ -24,6 +42,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 include "../includes/header.php";
 ?>
+
 
 <style>
     body {
@@ -64,7 +83,7 @@ include "../includes/header.php";
 
 <div class="login-container">
     <div class="login-card">
-        <h2>Reader Login</h2>
+        <h2>Login</h2>
         <?php if($message): ?>
             <div class="alert alert-danger"><?php echo $message; ?></div>
         <?php endif; ?>

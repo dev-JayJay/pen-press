@@ -18,6 +18,7 @@ $stmt->execute();
 $submitted_news = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 include "../includes/header.php";
+echo $_SESSION['role'];
 ?>
 
 <style>
@@ -119,10 +120,13 @@ include "../includes/header.php";
             <a class="nav-link" href="assign_task.php">Assign Task</a>
         </li>
         <li class="nav-item mb-2">
-            <a class="nav-link" href="create_editor.php">Create Editor</a>
+            <a class="nav-link" href="messages.php">Messages</a>
         </li>
         <li class="nav-item mb-2">
-            <a class="nav-link" href="messages.php">Messages</a>
+            <a class="nav-link" href="all_news.php">All News</a>
+        </li>
+        <li class="nav-item mb-2">
+            <a class="nav-link" href="create_editor.php">Create Editor / Reporter</a>
         </li>
         <li class="nav-item mt-4">
             <a class="nav-link text-danger" href="logout.php">Logout</a>

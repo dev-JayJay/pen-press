@@ -9,7 +9,7 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'editor'){
 }
 
 // Fetch all news submitted by this editor
-$stmt = $conn->prepare("SELECT * FROM news WHERE author_id=? ORDER BY created_at DESC");
+$stmt = $conn->prepare("SELECT * FROM news WHERE edited_by=? ORDER BY created_at DESC");
 $stmt->execute([$_SESSION['user_id']]);
 $news_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -113,9 +113,6 @@ include "../includes/header.php";
             <a class="nav-link" href="dashboard.php">Dashboard</a>
         </li>
         <li class="nav-item mb-2">
-            <a class="nav-link" href="create_news.php">Create News</a>
-        </li>
-        <li class="nav-item mb-2">
             <a class="nav-link active" href="submitted_news.php">Submitted News</a>
         </li>
         <li class="nav-item mb-2">
@@ -134,35 +131,61 @@ include "../includes/header.php";
         <p class="text-muted">You haven't submitted any news yet.</p>
     <?php else: ?>
         <div class="row">
-            <?php foreach($news_list as $news): ?>
-                <div class="col-md-4 mb-3">
-                    <div class="card h-100 shadow-sm">
-                        <?php if($news['image_path']): ?>
-                            <img src="<?php echo "../" . $news['image_path']; ?>" class="card-img-top" style="height:200px; object-fit:cover; border-top-left-radius:10px; border-top-right-radius:10px;">
-                        <?php endif; ?>
-                        <div class="card-body">
-                            <h5 class="card-title"><?php echo $news['title']; ?></h5>
-                            <p class="text-muted" style="font-size:0.85rem;">Category: <?php echo ucfirst($news['category']); ?></p>
-                            <p class="text-muted" style="font-size:0.85rem;">Status: 
-                                <?php 
-                                    switch($news['status']){
-                                        case 'draft': echo 'Draft'; break;
-                                        case 'submitted': echo 'Pending Review'; break;
-                                        case 'approved': echo 'Approved'; break;
-                                        case 'rejected': echo 'Rejected'; break;
-                                        case 'published': echo 'Published'; break;
-                                    } 
-                                ?>
-                            </p>
-                            <?php if($news['review_comment']): ?>
-                                <p class="text-danger" style="font-size:0.85rem;">Comment: <?php echo $news['review_comment']; ?></p>
-                            <?php endif; ?>
-                            <a href="edit_news.php?id=<?php echo $news['id']; ?>" class="btn btn-outline-primary btn-sm">Edit</a>
-                        </div>
-                    </div>
+    <?php foreach($news_list as $news): ?>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 shadow-sm">
+                <?php if($news['image_path']): ?>
+                    <img src="<?php echo "../" . $news['image_path']; ?>" 
+                         class="card-img-top" 
+                         style="height:200px; object-fit:cover; border-top-left-radius:10px; border-top-right-radius:10px;">
+                <?php endif; ?>
+
+                <div class="card-body">
+                    <h5 class="card-title"><?php echo $news['title']; ?></h5>
+
+                    <p class="text-muted" style="font-size:0.85rem;">
+                        Category: <?php echo ucfirst($news['category']); ?>
+                    </p>
+
+                    <p class="text-muted" style="font-size:0.85rem;">
+                        Status: 
+                        <?php 
+                            switch($news['status']){
+                                case 'draft': echo 'Draft'; break;
+                                case 'submitted': echo 'Pending Review'; break;
+                                case 'approved': echo 'Approved'; break;
+                                case 'rejected': echo 'Rejected'; break;
+                                case 'published': echo 'Published'; break;
+                            } 
+                        ?>
+                    </p>
+
+                    <?php if($news['review_comment']): ?>
+                        <p class="text-danger" style="font-size:0.85rem;">
+                            Comment: <?php echo $news['review_comment']; ?>
+                        </p>
+                    <?php endif; ?>
+
+                    <!-- Conditional Buttons -->
+                    <?php if($news['status'] === 'approved'): ?>
+
+                        <!-- Don't show edit button -->
+
+                    <?php else: ?>
+
+                        <a href="review_news.php?id=<?php echo $news['id']; ?>" 
+                           class="btn btn-primary btn-sm">
+                            Review
+                        </a>
+
+                    <?php endif; ?>
+
                 </div>
-            <?php endforeach; ?>
+            </div>
         </div>
+    <?php endforeach; ?>
+</div>
+
     <?php endif; ?>
 </main>
 

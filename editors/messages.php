@@ -2,37 +2,49 @@
 require_once "../includes/db.php";
 session_start();
 
-// Only allow editors
+// Restrict to editors only
 if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'editor'){
     header("Location: login.php");
     exit;
 }
 
-// Handle sending new message
-if($_SERVER['REQUEST_METHOD'] === 'POST'){
-    $body = trim($_POST['body']);
-    $receiver_id = $_POST['receiver_id'];
+$editor_id = $_SESSION['user_id'];
 
-    if($body && $receiver_id){
+// Handle sending message
+if($_SERVER['REQUEST_METHOD'] === 'POST'){
+    $receiver_id = $_POST['receiver_id'];
+    $body = trim($_POST['body']);
+
+    if($receiver_id && $body){
         $stmt = $conn->prepare("INSERT INTO messages (sender_id, receiver_id, body) VALUES (?, ?, ?)");
-        $stmt->execute([$_SESSION['user_id'], $receiver_id, $body]);
+        $stmt->execute([$editor_id, $receiver_id, $body]);
     }
 }
 
-// Get Editor-in-Chief details
-$stmt = $conn->prepare("SELECT id, first_name, last_name FROM users WHERE role='editor_in_chief' LIMIT 1");
-$stmt->execute();
-$eic = $stmt->fetch(PDO::FETCH_ASSOC);
+// Fetch all possible users editors can message
+$stmt = $conn->prepare("
+    SELECT id, first_name, last_name, role 
+    FROM users 
+    WHERE id != ? 
+    ORDER BY role, first_name
+");
+$stmt->execute([$editor_id]);
+$users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Fetch messages with EIC
+// Select user to chat with
+$selected_user_id = $_GET['user_id'] ?? ($users[0]['id'] ?? null);
+
+// Fetch messages between editor and selected user
 $messages = [];
-if($eic){
-    $stmt = $conn->prepare("SELECT m.*, u1.first_name AS sender_name
-                            FROM messages m
-                            JOIN users u1 ON m.sender_id = u1.id
-                            WHERE (sender_id=? AND receiver_id=?) OR (sender_id=? AND receiver_id=?)
-                            ORDER BY created_at ASC");
-    $stmt->execute([$_SESSION['user_id'], $eic['id'], $eic['id'], $_SESSION['user_id']]);
+if($selected_user_id){
+    $stmt = $conn->prepare("
+        SELECT m.*, u1.first_name AS sender_name 
+        FROM messages m
+        JOIN users u1 ON m.sender_id = u1.id
+        WHERE (sender_id=? AND receiver_id=?) OR (sender_id=? AND receiver_id=?)
+        ORDER BY created_at ASC
+    ");
+    $stmt->execute([$editor_id, $selected_user_id, $selected_user_id, $editor_id]);
     $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
@@ -40,102 +52,71 @@ include "../includes/header.php";
 ?>
 
 <style>
-    body {
-        background-color: #f5f6fa;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    /* Sidebar */
-    .sidebar {
-        height: 100vh;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 240px;
-        background-color: #1E1E2F;
-        padding-top: 60px;
-        color: #fff;
-        border-right: 1px solid #2c2c3e;
-    }
-    .sidebar h4 {
-        color: #00BFFF;
-        font-weight: 600;
-        padding-left: 20px;
-    }
-    .sidebar .nav-link {
-        color: #c0c0c0;
-        padding: 10px 20px;
-        transition: all 0.2s;
-    }
-    .sidebar .nav-link:hover {
-        background-color: #2c2c3e;
-        color: #00BFFF;
-        border-radius: 5px;
-    }
-    .sidebar .nav-link.active {
-        background-color: #00BFFF;
-        color: #fff;
-        border-radius: 5px;
-    }
+body {
+    background-color: #f5f6fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
-    main {
-        margin-left: 240px;
-        padding: 30px;
-    }
+.sidebar {
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    background-color: #1E1E2F;
+    padding-top: 60px;
+    color: #fff;
+    border-right: 1px solid #2c2c3e;
+}
 
-    /* Cards */
-    .card {
-        border-radius: 10px;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    }
-    .card-title {
-        font-weight: 600;
-        color: #1E1E2F;
-    }
-    .card-text {
-        color: #555;
-    }
-    .btn-primary {
-        background-color: #00BFFF;
-        border-color: #00BFFF;
-    }
-    .btn-primary:hover {
-        background-color: #009acd;
-        border-color: #009acd;
-    }
-    .btn-outline-primary {
-        border-color: #00BFFF;
-        color: #00BFFF;
-    }
-    .btn-outline-primary:hover {
-        background-color: #00BFFF;
-        color: #fff;
-    }
+.sidebar .nav-link {
+    color: #c0c0c0;
+    padding: 10px 20px;
+}
+.sidebar .nav-link.active {
+    background-color: #00BFFF;
+    color: #fff;
+}
 
-    @media(max-width: 768px) {
-        .sidebar {
-            position: relative;
-            width: 100%;
-            height: auto;
-        }
-        main {
-            margin-left: 0;
-            padding: 20px;
-        }
-    }
+main {
+    margin-left: 240px;
+    padding: 30px;
+}
+
+.chat-box {
+    height: 450px;
+    overflow-y: auto;
+    padding: 15px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.message {
+    margin-bottom: 10px;
+    padding: 10px 15px;
+    border-radius: 10px;
+    max-width: 75%;
+}
+
+.message.you {
+    background-color: #00BFFF;
+    color: white;
+    margin-left: auto;
+}
+
+.message.they {
+    background-color: #e0e0e0;
+    color: black;
+}
 </style>
 
 <div class="sidebar d-flex flex-column">
     <h4 class="mb-4 mt-2">Pen Press News - Editor</h4>
+
     <ul class="nav flex-column">
         <li class="nav-item mb-2">
             <a class="nav-link" href="dashboard.php">Dashboard</a>
-        </li>
-        <li class="nav-item mb-2">
-            <a class="nav-link" href="create_news.php">Create News</a>
         </li>
         <li class="nav-item mb-2">
             <a class="nav-link" href="submitted_news.php">Submitted News</a>
@@ -150,30 +131,51 @@ include "../includes/header.php";
 </div>
 
 <main>
-    <h2>Messages with EIC</h2>
+    <h2>Messages</h2>
 
-    <div class="card shadow-sm mb-3" style="height:500px; overflow-y:auto; padding:15px;">
-        <?php if(empty($messages)): ?>
-            <p class="text-muted">No messages yet. Start the conversation!</p>
-        <?php else: ?>
-            <?php foreach($messages as $msg): ?>
-                <div class="mb-2">
-                    <strong><?php echo $msg['sender_id'] == $_SESSION['user_id'] ? 'You' : $msg['sender_name']; ?>:</strong>
-                    <span><?php echo htmlspecialchars($msg['body']); ?></span>
-                    <div class="text-muted" style="font-size:0.75rem;"><?php echo $msg['created_at']; ?></div>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
+    <div class="row">
+        <!-- User List -->
+        <div class="col-md-3">
+            <div class="list-group">
+                <?php foreach($users as $u): ?>
+                    <a href="messages.php?user_id=<?php echo $u['id']; ?>" 
+                       class="list-group-item list-group-item-action <?php echo $selected_user_id == $u['id'] ? 'active' : ''; ?>">
+                        <?php echo ucfirst($u['first_name']) . ' ' . $u['last_name']; ?>
+                        <br>
+                        <small class="text-muted"><?php echo ucfirst($u['role']); ?></small>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="col-md-9">
+            <div class="chat-box mb-3">
+                <?php if(empty($messages)): ?>
+                    <p class="text-muted">No messages yet. Start the conversation.</p>
+                <?php else: ?>
+                    <?php foreach($messages as $msg): ?>
+                        <div class="message <?php echo $msg['sender_id']==$editor_id ? 'you' : 'they'; ?>">
+                            <?php echo htmlspecialchars($msg['body']); ?>
+                            <br>
+                            <small><?php echo $msg['sender_id']==$editor_id ? 'You' : $msg['sender_name']; ?> |
+                                <?php echo $msg['created_at']; ?>
+                            </small>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+
+            <!-- Input -->
+            <?php if($selected_user_id): ?>
+                <form method="post" class="d-flex">
+                    <input type="hidden" name="receiver_id" value="<?php echo $selected_user_id; ?>">
+                    <input type="text" name="body" class="form-control me-2" placeholder="Type a message..." required>
+                    <button class="btn btn-primary">Send</button>
+                </form>
+            <?php endif; ?>
+        </div>
     </div>
-
-    <!-- Message Form -->
-    <?php if($eic): ?>
-    <form method="post" class="d-flex">
-        <input type="hidden" name="receiver_id" value="<?php echo $eic['id']; ?>">
-        <input type="text" name="body" class="form-control me-2" placeholder="Type a message..." required>
-        <button class="btn btn-primary">Send</button>
-    </form>
-    <?php endif; ?>
 </main>
 
 <?php include "../includes/footer.php"; ?>
