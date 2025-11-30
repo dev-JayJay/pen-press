@@ -49,9 +49,9 @@ main { margin-left: 240px; padding: 30px; }
         <li class="nav-item mb-2">
             <a class="nav-link active" href="assignments.php">Assignments</a>
         </li>
-        <li class="nav-item mb-2">
+        <!-- <li class="nav-item mb-2">
             <a class="nav-link" href="messages.php">Messages</a>
-        </li>
+        </li> -->
         <li class="nav-item mb-2">
             <a class="nav-link" href="all_news.php">All News</a>
         </li>

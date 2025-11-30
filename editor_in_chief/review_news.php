@@ -176,9 +176,9 @@ include "../includes/header.php";
         <li class="nav-item mb-2">
             <a class="nav-link" href="create_editor.php">Create Editor</a>
         </li>
-        <li class="nav-item mb-2">
+        <!-- <li class="nav-item mb-2">
             <a class="nav-link active" href="messages.php">Messages</a>
-        </li>
+        </li> -->
         <li class="nav-item mt-4">
             <a class="nav-link text-danger" href="logout.php">Logout</a>
         </li>

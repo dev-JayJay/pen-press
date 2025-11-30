@@ -168,9 +168,9 @@ include "../includes/header.php";
         <li class="nav-item mb-2">
             <a class="nav-link" href="assign_task.php">Assign Task</a>
         </li>
-        <li class="nav-item mb-2">
+        <!-- <li class="nav-item mb-2">
             <a class="nav-link" href="messages.php">Messages</a>
-        </li>
+        </li> -->
         <li class="nav-item mb-2">
             <a class="nav-link" href="all_news.php">All News</a>
         </li>

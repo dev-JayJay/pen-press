@@ -134,14 +134,14 @@ main {
         <li class="nav-item mb-2">
             <a class="nav-link active" href="assign_task.php">Assign Task</a>
         </li>
-        <li class="nav-item mb-2">
+        <!-- <li class="nav-item mb-2">
             <a class="nav-link" href="messages.php">Messages</a>
-        </li>
+        </li> -->
         <li class="nav-item mb-2">
             <a class="nav-link" href="all_news.php">All News</a>
         </li>
         <li class="nav-item mb-2">
-            <a class="nav-link" href="create_editor.php">Create Editor / Reporter</a>
+            <a class="nav-link" href="eic_manage_users.php">Manage Editor / Reporter</a>
         </li>
         <li class="nav-item mt-4">
             <a class="nav-link text-danger" href="logout.php">Logout</a>

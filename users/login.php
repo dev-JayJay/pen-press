@@ -7,34 +7,51 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
 
-    // Fetch user regardless of role
+    // Fetch user
     $stmt = $conn->prepare("SELECT * FROM users WHERE email=? LIMIT 1");
     $stmt->execute([$email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if($user && password_verify($password, $user['password'])) {
-        // Set session variables
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['role'] = $user['role'];
-        $_SESSION['first_name'] = $user['first_name'];
+    if ($user && password_verify($password, $user['password'])) {
 
-        // Redirect based on role
-        switch($user['role']){
-            case 'editor_in_chief':
-                header("Location: /pen-press/editor_in_chief/dashboard.php");
-                break;
-            case 'editor':
-                header("Location: /pen-press/editors/dashboard.php");
-                break;
-            case 'reporter':
-                header("Location: /pen-press/reporter/dashboard.php");
-                break;
-            case 'reader':
-            default:
-                header("Location: dashboard.php");
-                break;
+        // Readers are allowed regardless of status
+        if ($user['role'] !== 'reader' && $user['status'] !== 'approved') {
+
+            // Block all non-readers until approved
+            if ($user['status'] === 'pending') {
+                $message = "Your account is awaiting approval. Please check back later.";
+            } elseif ($user['status'] === 'rejected') {
+                $message = "Your account registration was rejected. Contact the admin.";
+            } else {
+                $message = "Your account is not approved for access.";
+            }
+
+        } else {
+
+            // Login user
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['role'] = $user['role'];
+            $_SESSION['first_name'] = $user['first_name'];
+
+            // Redirect based on role
+            switch($user['role']) {
+                case 'editor_in_chief':
+                    header("Location: /pen-press/editor_in_chief/dashboard.php");
+                    break;
+                case 'editor':
+                    header("Location: /pen-press/editors/dashboard.php");
+                    break;
+                case 'reporter':
+                    header("Location: /pen-press/reporter/dashboard.php");
+                    break;
+                case 'reader':
+                default:
+                    header("Location: dashboard.php");
+                    break;
+            }
+            exit;
         }
-        exit;
+
     } else {
         $message = "Invalid login credentials.";
     }
@@ -42,6 +59,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 include "../includes/header.php";
 ?>
+
 
 
 <style>
@@ -99,6 +117,10 @@ include "../includes/header.php";
             <button type="submit" class="btn btn-primary w-100">Login</button>
         </form>
         <p class="mt-3 text-center">Don't have an account? <a href="register.php">Register here</a></p>
+        <p class="mt-3 text-center">
+    Want to join Pen Press? <a href="join-penpress.php">Apply here</a>
+</p>
+
     </div>
 </div>
 

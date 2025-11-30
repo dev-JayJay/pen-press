@@ -288,9 +288,9 @@ form button {
         <li class="nav-item mb-2">
             <a class="nav-link" href="assignments.php">Assignments</a>
         </li>
-        <li class="nav-item mb-2">
+        <!-- <li class="nav-item mb-2">
             <a class="nav-link" href="messages.php">Messages</a>
-        </li>
+        </li> -->
         <li class="nav-item mb-2">
             <a class="nav-link active" href="all_news.php">All News</a>
         </li>

@@ -188,7 +188,7 @@ main {
     <ul class="nav flex-column">
         <li class="nav-item mb-2"><a class="nav-link" href="dashboard.php">Dashboard</a></li>
         <li class="nav-item mb-2"><a class="nav-link" href="assign_task.php">Assign Task</a></li>
-        <li class="nav-item mb-2"><a class="nav-link active" href="messages.php">Messages</a></li>
+        <!-- <li class="nav-item mb-2"><a class="nav-link active" href="messages.php">Messages</a></li> -->
         <li class="nav-item mb-2">
             <a class="nav-link" href="all_news.php">All News</a>
         </li>

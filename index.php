@@ -14,7 +14,7 @@ include "includes/header.php";
 ?>
 
 <div class="text-center mb-5">
-    <h1>Welcome to Pen Press News</h1>
+    <h1>Pen Press News Management And Publication System </h1>
     <p class="lead">Stay updated with the latest Sports, Business, and Feature news!</p>
     <?php if(!isset($_SESSION['user_id'])): ?>
         <a href="users/register.php" class="btn btn-primary btn-lg me-2">Register</a>

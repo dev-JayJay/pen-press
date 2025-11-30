@@ -184,8 +184,8 @@ main h4 {
         <li class="nav-item mb-2">
             <a class="nav-link" href="submitted_news.php">Submitted News</a>
         </li>
-        <li class="nav-item mb-2">
-            <a class="nav-link" href="messages.php">Messages</a>
+        <!-- <li class="nav-item mb-2">
+            <a class="nav-link" href="messages.php">Messages</a> -->
         </li>
         <li class="nav-item mt-4">
             <a class="nav-link text-danger" href="logout.php">Logout</a>
