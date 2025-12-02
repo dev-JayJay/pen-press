@@ -1,5 +1,6 @@
 <?php
 require_once "../includes/db.php";
+require_once "../includes/notify.php";
 session_start();
 
 // Only allow editors
@@ -35,11 +36,11 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
     $summary = trim($_POST['summary']);
     $body = trim($_POST['body']);
     $category = $_POST['category'];
-    $status = $_POST['status']; // approved / rejected / pending
+    $status = $_POST['status']; 
     $review_comment = trim($_POST['review_comment']);
 
     // Handle image upload
-    $image_path = $news['image_path']; // default existing image
+    $image_path = $news['image_path']; 
     if(isset($_FILES['image']) && $_FILES['image']['error'] === 0){
         $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
         $image_path = 'uploads/news/' . uniqid() . '.' . $ext;
@@ -61,6 +62,21 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
             WHERE id = ?
         ");
         if($stmt->execute([$title, $summary, $body, $category, $image_path, $status, $review_comment, $editor_id, $news_id])){
+            $assignment_id = $news['assignment_id'];
+            $reporter_stmt = $conn->prepare("SELECT reporter_id FROM assignments WHERE id = ?");
+            $reporter_stmt->execute([$assignment_id]);
+            $reporter = $reporter_stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($reporter) {
+                $reporter_id = $reporter['reporter_id'];
+
+                notify_user(
+                    $conn,
+                    $reporter_id,
+                    "Your article titled '{$title}' has been reviewed by the editor and forwarded to the Editor-in-Chief."
+                );
+            }
+
             $success = "News review and edits submitted successfully!";
             // Refresh the news data
             $stmt = $conn->prepare("SELECT * FROM news WHERE id = ?");
@@ -135,6 +151,10 @@ main {
     background-color: #e0e0e0;
     color: black;
 }
+.badge {
+    font-size: 0.8rem;
+    margin-left: 5px;
+}
 </style>
 
 <div class="sidebar d-flex flex-column">
@@ -146,6 +166,14 @@ main {
         </li>
         <li class="nav-item mb-2">
             <a class="nav-link" href="submitted_news.php">Submitted News</a>
+        </li>
+        <li class="nav-item mb-2">
+            <a class="nav-link" href="notifications.php">
+                Notifications 
+                <?php if($unread_count > 0): ?>
+                    <span class="badge bg-danger"><?php echo $unread_count; ?></span>
+                <?php endif; ?>
+            </a>
         </li>
         <!-- <li class="nav-item mb-2">
             <a class="nav-link" href="messages.php">Messages</a>

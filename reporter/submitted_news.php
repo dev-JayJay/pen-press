@@ -17,6 +17,10 @@ $stmt = $conn->prepare("SELECT n.*, a.title as assignment_title
 $stmt->execute([$reporter_id]);
 $news_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+$stmt = $conn->prepare("SELECT COUNT(*) FROM notifications WHERE user_id=? AND is_read=0");
+$stmt->execute([$_SESSION['user_id']]);
+$unread_count = $stmt->fetchColumn();
+
 include "../includes/header.php";
 ?>
 
@@ -81,6 +85,10 @@ include "../includes/header.php";
             padding: 20px;
         }
     }
+    .badge {
+    font-size: 0.8rem;
+    margin-left: 5px;
+}
 </style>
 
 <div class="sidebar d-flex flex-column">
@@ -95,12 +103,17 @@ include "../includes/header.php";
         <li class="nav-item mb-2">
             <a class="nav-link" href="assignments.php">Assignments</a>
         </li>
+        <li class="nav-item mb-2">
+            <a class="nav-link" href="notifications.php">
+                Notifications 
+                <?php if($unread_count > 0): ?>
+                    <span class="badge bg-danger"><?php echo $unread_count; ?></span>
+                <?php endif; ?>
+            </a>
+        </li>
         <!-- <li class="nav-item mb-2">
             <a class="nav-link " href="messages.php">Messages</a>
         </li> -->
-        <li class="nav-item mb-2">
-            <a class="nav-link" href="all_news.php">All News</a>
-        </li>
         <li class="nav-item mt-4">
             <a class="nav-link text-danger" href="logout.php">Logout</a>
         </li>

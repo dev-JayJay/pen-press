@@ -73,6 +73,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
+$stmt = $conn->prepare("SELECT COUNT(*) FROM notifications WHERE user_id=? AND is_read=0");
+$stmt->execute([$_SESSION['user_id']]);
+$unread_count = $stmt->fetchColumn();
+
 include "../includes/header.php";
 ?>
 
@@ -179,6 +183,10 @@ main {
     font-size: 20px;
     font-weight: bold;
 }
+    .badge {
+    font-size: 0.8rem;
+    margin-left: 5px;
+}
 </style>
 
 <!-- SIDEBAR -->
@@ -188,10 +196,15 @@ main {
     <ul class="nav flex-column">
         <li class="nav-item mb-2"><a class="nav-link" href="dashboard.php">Dashboard</a></li>
         <li class="nav-item mb-2"><a class="nav-link" href="assign_task.php">Assign Task</a></li>
-        <!-- <li class="nav-item mb-2"><a class="nav-link active" href="messages.php">Messages</a></li> -->
         <li class="nav-item mb-2">
-            <a class="nav-link" href="all_news.php">All News</a>
+            <a class="nav-link" href="notifications.php">
+                Notifications 
+                <?php if($unread_count > 0): ?>
+                    <span class="badge bg-danger"><?php echo $unread_count; ?></span>
+                <?php endif; ?>
+            </a>
         </li>
+        <!-- <li class="nav-item mb-2"><a class="nav-link active" href="messages.php">Messages</a></li> -->
         <li class="nav-item mb-2">
             <a class="nav-link" href="create_editor.php">Create Editor / Reporter</a>
         </li>

@@ -1,5 +1,7 @@
 <?php
 require_once "../includes/db.php";
+require_once "../includes/notify.php";
+
 session_start();
 
 
@@ -44,6 +46,22 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
                                 SET title=?, slug=?, summary=?, body=?, category=?, image_path=?, status='submitted', review_comment=NULL, updated_at=NOW() 
                                 WHERE id=? AND author_id=?");
         $stmt->execute([$title, $slug, $summary, $body, $category, $image_path, $news_id, $_SESSION['user_id']]);
+        $assignment_id = $news['assignment_id'];
+
+        $reporter_stmt = $conn->prepare("SELECT reporter_id FROM assignments WHERE assignment_id = ?");
+        $reporter_stmt->execute([$assignment_id]);
+        $reporter = $reporter_stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($reporter) {
+            $reporter_id = $reporter['reporter_id'];
+
+            notify_user(
+                $conn,
+                $reporter_id,
+                "Your article titled '{$title}' has been reviewed by the editor and forwarded to the Editor-in-Chief."
+            );
+        }
+
         $success = "News updated and resubmitted for review!";
         // Refresh news data
         $stmt = $conn->prepare("SELECT * FROM news WHERE id=? AND author_id=?");
@@ -53,6 +71,10 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
         $error = "Please fill in all required fields!";
     }
 }
+
+$stmt = $conn->prepare("SELECT COUNT(*) FROM notifications WHERE user_id=? AND is_read=0");
+$stmt->execute([$_SESSION['user_id']]);
+$unread_count = $stmt->fetchColumn();
 
 include "../includes/header.php";
 ?>
@@ -144,6 +166,10 @@ include "../includes/header.php";
             padding: 20px;
         }
     }
+    .badge {
+    font-size: 0.8rem;
+    margin-left: 5px;
+}
 </style>
 
 <!-- Sidebar -->
@@ -158,6 +184,14 @@ include "../includes/header.php";
         </li>
         <li class="nav-item mb-2">
             <a class="nav-link" href="submitted_news.php">Submitted News</a>
+        </li>
+        <li class="nav-item mb-2">
+            <a class="nav-link active" href="notifications.php">
+                Notifications 
+                <?php if($unread_count > 0): ?>
+                    <span class="badge bg-danger"><?php echo $unread_count; ?></span>
+                <?php endif; ?>
+            </a>
         </li>
         <!-- <li class="nav-item mb-2">
             <a class="nav-link" href="messages.php">Messages</a>

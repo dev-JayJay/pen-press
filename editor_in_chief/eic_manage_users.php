@@ -1,4 +1,7 @@
 <?php
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+require '../vendor/autoload.php';
 require_once "../includes/db.php";
 session_start();
 
@@ -16,11 +19,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = $_POST['user_id'];
 
     // Approve user
+    // if (isset($_POST['approve_user'])) {
+    //     $stmt = $conn->prepare("UPDATE users SET status='approved' WHERE id=?");
+    //     $stmt->execute([$user_id]);
+    //     $success = "User approved!";
+    // }
+
     if (isset($_POST['approve_user'])) {
-        $stmt = $conn->prepare("UPDATE users SET status='approved' WHERE id=?");
-        $stmt->execute([$user_id]);
-        $success = "User approved!";
+    $stmt = $conn->prepare("UPDATE users SET status='approved' WHERE id=?");
+    $stmt->execute([$user_id]);
+    $success = "User approved!";
+
+    // Fetch user email and name
+    $stmt_user = $conn->prepare("SELECT first_name, email FROM users WHERE id=?");
+    $stmt_user->execute([$user_id]);
+    $user = $stmt_user->fetch(PDO::FETCH_ASSOC);
+
+    if ($user) {
+        $mail = new PHPMailer(true);
+        try {
+            
+            $mail->isSMTP();
+            $mail->Host       = 'smtp.gmail.com'; 
+            $mail->SMTPAuth   = true;
+            $mail->Username   = 'jaytrycode@gmail.com';
+            $mail->Password   = 'fpcs yraq qdux uwxf';
+            $mail->SMTPSecure = 'tls'; 
+            $mail->Port       = 587; 
+
+            $mail->setFrom('no-reply@penpress.com', 'Pen Press');
+            $mail->addAddress($user['email'], $user['first_name']);
+            $mail->addReplyTo('support@penpress.com', 'Support');
+
+            // Content
+            $mail->isHTML(true);
+            $mail->Subject = 'Your Account Has Been Approved';
+            $mail->Body    = "
+                <html>
+                <body>
+                    <p>Hello " . $user['first_name'] . ",</p>
+                    <p>Your account has been approved! You can now log in and start using our platform.</p>
+                    <p>
+                        <a href='http://localhost/pen-press/users/login.php' 
+                        style='display: inline-block; padding: 10px 20px; font-size: 16px; 
+                                color: white; background-color: #007BFF; text-decoration: none; 
+                                border-radius: 5px;'>Log In</a>
+                    </p>
+                    <p>Best regards,<br>Pen Press Team</p>
+                </body>
+                </html>
+            ";
+            $mail->AltBody = "Hello " . $user['first_name'] . ",\n\n"
+                        . "Your account has been approved! You can now log in using this link:\n"
+                        . "http://localhost/pen-press/users/login.php\n\n"
+                        . "Best regards,\nPen Press Team";
+
+            $mail->send();
+            $success .= " Email notification sent to the user.";
+        } catch (Exception $e) {
+            $error = "User approved but email could not be sent. Mailer Error: {$mail->ErrorInfo}";
+        }
     }
+}
 
     // Reject user
     if (isset($_POST['reject_user'])) {

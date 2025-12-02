@@ -1,5 +1,6 @@
 <?php
 require_once "../includes/db.php";
+require_once "../includes/notify.php";
 session_start();
 
 // Only allow EIC
@@ -49,6 +50,12 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
                 $stmt = $conn->prepare("UPDATE assignments SET status='completed' WHERE id=?");
                 $stmt->execute([$assignment['assignment_id']]);
             }
+                notify_user(
+                    $conn, 
+                    $news['edited_by'], 
+                    "Your reviewed article '{$news['title']}' has been approved by the Editor-in-Chief."
+                );
+
 
             $success = "News approved! Assignment marked as completed.";
         } else {
